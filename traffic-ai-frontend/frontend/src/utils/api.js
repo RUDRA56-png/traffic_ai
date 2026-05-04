@@ -1,55 +1,24 @@
-const login = async (credentials) => {
-  try {
-    const res = await authAPI.login(credentials)
+import axios from "axios";
 
-    console.log("FULL RESPONSE:", res)        // 🔥 debug
-    console.log("DATA:", res.data)
+const api = axios.create({
+  baseURL: "https://traffic-ai-fpya.onrender.com",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-    // 🔥 Handle both formats safely
-    const token =
-      res.data?.token ||
-      res.data?.jwt ||
-      res.data?.accessToken
-
-    const role =
-      res.data?.role ||
-      res.data?.roles?.[0] ||
-      "USER"
-
-    const username =
-      res.data?.username ||
-      res.data?.user ||
-      credentials.username
-
-    if (!token) {
-      throw new Error("Token not found in response")
-    }
-
-    const cleanRole = role.replace("ROLE_", "")
-
-    // 🔥 FORCE SAVE
-    localStorage.setItem("jwt", token)
-    localStorage.setItem("user_role", cleanRole)
-    localStorage.setItem("username", username)
-
-    console.log("SAVED TOKEN:", localStorage.getItem("jwt"))
-
-    setUser({
-      token,
-      role: cleanRole,
-      username
-    })
-
-    return cleanRole
-
-  } catch (err) {
-    console.error("LOGIN ERROR:", err)
-
-    throw new Error(
-      err.response?.data?.error ||
-      err.response?.data?.message ||
-      err.message ||
-      "Login failed"
-    )
+// 🔐 Attach token automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("jwt");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-}
+  return config;
+});
+
+export const authAPI = {
+  login: (data) => api.post("/api/auth/login", data),
+  register: (data) => api.post("/api/auth/register", data),
+};
+
+export default api;
