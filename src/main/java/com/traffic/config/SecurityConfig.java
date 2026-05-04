@@ -1,6 +1,5 @@
 package com.traffic.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,11 +9,12 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
 @Configuration
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     @Bean
@@ -25,16 +25,16 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ VERY IMPORTANT (preflight requests)
+                        // ✅ allow preflight (important for frontend)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ Allow auth APIs
+                        // ✅ allow login/register
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // ✅ Allow Swagger
+                        // ✅ allow swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // ✅ TEMP: allow everything (for testing)
+                        // ✅ allow everything (for testing)
                         .anyRequest().permitAll()
                 );
 
@@ -45,7 +45,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 🔥 MUST match your frontend exactly
+        // 🔥 must match frontend
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173"
         ));
@@ -56,12 +56,18 @@ public class SecurityConfig {
 
         config.setAllowedHeaders(List.of("*"));
 
-        // 🔥 IMPORTANT: set FALSE to avoid browser block
+        // 🔥 IMPORTANT: false to avoid browser blocking
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         return source;
+    }
+
+    // 🔐 REQUIRED for AuthController
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
