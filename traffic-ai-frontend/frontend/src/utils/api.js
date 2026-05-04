@@ -1,37 +1,25 @@
-const login = async (credentials) => {
-  try {
-    const res = await fetch(
-      "https://traffic-ai-fpya.onrender.com/api/auth/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(credentials)
-      }
-    );
+import axios from "axios";
 
-    if (!res.ok) {
-      throw new Error("Invalid credentials");
-    }
-
-    const data = await res.json();
-
-    // ✅ Save token
-    localStorage.setItem("jwt", data.token);
-    localStorage.setItem("user_role", data.role);
-    localStorage.setItem("username", data.username);
-
-    setUser({
-      token: data.token,
-      role: data.role.replace("ROLE_", ""),
-      username: data.username
-    });
-
-    return data.role.replace("ROLE_", "");
-
-  } catch (err) {
-    console.error(err);
-    throw new Error("Network Error");
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  headers: {
+    "Content-Type": "application/json"
   }
+});
+
+// 🔐 Auth APIs
+export const authAPI = {
+  login: (data) => api.post("/api/auth/login", data),
+  register: (data) => api.post("/api/auth/register", data),
 };
+
+// 🚦 Traffic APIs
+export const trafficAPI = {
+  predict: (location) =>
+    api.get(`/api/traffic/predict/${encodeURIComponent(location)}`),
+  route: (data) => api.post("/api/traffic/route", data),
+  add: (data) => api.post("/api/traffic/add", data),
+  all: () => api.get("/api/traffic/all"),
+};
+
+export default api;
