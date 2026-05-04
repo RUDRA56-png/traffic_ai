@@ -1,10 +1,11 @@
 import axios from 'axios'
 
-// Use relative path so the Vite proxy handles it in dev.
-// In production, set VITE_API_URL env var to your backend URL.
-const BASE_URL = import.meta.env.VITE_API_URL || ''
+// 🔥 FORCE backend URL (no fallback to localhost)
+const BASE_URL = 'https://traffic-ai-fpya.onrender.com'
 
 const api = axios.create({ baseURL: BASE_URL })
+
+console.log("BASE_URL:", BASE_URL) // debug
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('jwt_token')
