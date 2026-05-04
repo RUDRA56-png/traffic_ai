@@ -1,24 +1,37 @@
-import axios from "axios";
+const login = async (credentials) => {
+  try {
+    const res = await fetch(
+      "https://traffic-ai-fpya.onrender.com/api/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(credentials)
+      }
+    );
 
-const api = axios.create({
-  baseURL: "https://traffic-ai-fpya.onrender.com",
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+    if (!res.ok) {
+      throw new Error("Invalid credentials");
+    }
 
-// 🔐 Attach token automatically
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("jwt");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    const data = await res.json();
+
+    // ✅ Save token
+    localStorage.setItem("jwt", data.token);
+    localStorage.setItem("user_role", data.role);
+    localStorage.setItem("username", data.username);
+
+    setUser({
+      token: data.token,
+      role: data.role.replace("ROLE_", ""),
+      username: data.username
+    });
+
+    return data.role.replace("ROLE_", "");
+
+  } catch (err) {
+    console.error(err);
+    throw new Error("Network Error");
   }
-  return config;
-});
-
-export const authAPI = {
-  login: (data) => api.post("/api/auth/login", data),
-  register: (data) => api.post("/api/auth/register", data),
 };
-
-export default api;
