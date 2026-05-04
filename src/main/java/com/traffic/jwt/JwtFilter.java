@@ -23,18 +23,24 @@ public class JwtFilter extends GenericFilter {
 
         HttpServletRequest req = (HttpServletRequest) request;
 
+        String path = req.getServletPath();
+
+        // 🔥 VERY IMPORTANT: skip auth endpoints + OPTIONS
+        if (path.startsWith("/api/auth") || req.getMethod().equalsIgnoreCase("OPTIONS")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = req.getHeader("Authorization");
 
-        // 🔐 Check token exists and starts with Bearer
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
             String token = authHeader.substring(7);
 
             try {
                 String username = jwtUtil.extractUsername(token);
-                String role = jwtUtil.extractRole(token); // e.g. ROLE_ADMIN
+                String role = jwtUtil.extractRole(token); // ROLE_ADMIN
 
-                // ✅ IMPORTANT: role already has ROLE_ prefix
                 List<SimpleGrantedAuthority> authorities =
                         List.of(new SimpleGrantedAuthority(role));
 
@@ -45,16 +51,13 @@ public class JwtFilter extends GenericFilter {
                                 authorities
                         );
 
-                // 🔐 Set authentication in context
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (Exception e) {
-                // 🔥 Prevent crash on invalid token
                 System.out.println("JWT ERROR: " + e.getMessage());
             }
         }
 
-        // Continue filter chain
         chain.doFilter(request, response);
     }
 }
