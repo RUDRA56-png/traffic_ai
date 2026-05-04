@@ -1,7 +1,7 @@
 package com.traffic.jwt;
 
 import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,24 +25,36 @@ public class JwtFilter extends GenericFilter {
 
         String authHeader = req.getHeader("Authorization");
 
+        // 🔐 Check token exists and starts with Bearer
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
             String token = authHeader.substring(7);
 
-            String username = jwtUtil.extractUsername(token);
-            String role = jwtUtil.extractRole(token);
+            try {
+                String username = jwtUtil.extractUsername(token);
+                String role = jwtUtil.extractRole(token); // e.g. ROLE_ADMIN
 
-            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                // ✅ IMPORTANT: role already has ROLE_ prefix
+                List<SimpleGrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority(role));
 
-            var auth = new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    authorities
-            );
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                authorities
+                        );
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                // 🔐 Set authentication in context
+                SecurityContextHolder.getContext().setAuthentication(auth);
+
+            } catch (Exception e) {
+                // 🔥 Prevent crash on invalid token
+                System.out.println("JWT ERROR: " + e.getMessage());
+            }
         }
 
+        // Continue filter chain
         chain.doFilter(request, response);
     }
 }

@@ -1,42 +1,55 @@
-import axios from 'axios'
+const login = async (credentials) => {
+  try {
+    const res = await authAPI.login(credentials)
 
-// 🔥 FORCE backend URL (no fallback to localhost)
-const BASE_URL = 'https://traffic-ai-fpya.onrender.com'
+    console.log("FULL RESPONSE:", res)        // 🔥 debug
+    console.log("DATA:", res.data)
 
-const api = axios.create({ baseURL: BASE_URL })
+    // 🔥 Handle both formats safely
+    const token =
+      res.data?.token ||
+      res.data?.jwt ||
+      res.data?.accessToken
 
-console.log("BASE_URL:", BASE_URL) // debug
+    const role =
+      res.data?.role ||
+      res.data?.roles?.[0] ||
+      "USER"
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('jwt_token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+    const username =
+      res.data?.username ||
+      res.data?.user ||
+      credentials.username
 
-api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401 || err.response?.status === 403) {
-      localStorage.removeItem('jwt_token')
-      localStorage.removeItem('user_role')
-      localStorage.removeItem('username')
-      window.location.href = '/login'
+    if (!token) {
+      throw new Error("Token not found in response")
     }
-    return Promise.reject(err)
+
+    const cleanRole = role.replace("ROLE_", "")
+
+    // 🔥 FORCE SAVE
+    localStorage.setItem("jwt", token)
+    localStorage.setItem("user_role", cleanRole)
+    localStorage.setItem("username", username)
+
+    console.log("SAVED TOKEN:", localStorage.getItem("jwt"))
+
+    setUser({
+      token,
+      role: cleanRole,
+      username
+    })
+
+    return cleanRole
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err)
+
+    throw new Error(
+      err.response?.data?.error ||
+      err.response?.data?.message ||
+      err.message ||
+      "Login failed"
+    )
   }
-)
-
-export const authAPI = {
-  login: (data) => api.post('/api/auth/login', data),
-  register: (data) => api.post('/api/auth/register', data),
-  logout: () => api.post('/api/auth/logout'),
 }
-
-export const trafficAPI = {
-  add: (data) => api.post('/api/traffic/add', data),
-  predict: (location) => api.get(`/api/traffic/predict/${encodeURIComponent(location)}`),
-  route: (data) => api.post('/api/traffic/route', data),
-  all: () => api.get('/api/traffic/all'),
-}
-
-export default api
