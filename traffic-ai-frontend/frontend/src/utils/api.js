@@ -7,13 +7,12 @@ const api = axios.create({
   }
 });
 
-// ✅ MUST EXPORT THIS
+// ✅ Clean paths (only ONE /api)
 export const authAPI = {
   login: (data) => api.post("/api/auth/login", data),
   register: (data) => api.post("/api/auth/register", data),
 };
 
-// (optional other APIs)
 export const trafficAPI = {
   predict: (location) =>
     api.get(`/api/traffic/predict/${encodeURIComponent(location)}`),
