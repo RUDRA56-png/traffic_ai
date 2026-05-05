@@ -24,17 +24,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
-
-                        // ✅ Allow preflight requests (IMPORTANT for browser)
+                        // ✅ Allow preflight requests (VERY IMPORTANT)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ Public APIs
+                        // ✅ Allow auth APIs
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // ✅ Swagger access
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
-                        // ✅ Allow all APIs (for now)
+                        // ✅ Allow everything for now
                         .anyRequest().permitAll()
                 );
 
@@ -45,26 +41,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 🔥 FIXED: Allow your frontend (LOCAL + VERCEL)
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "https://traffic-ai-frontend56.vercel.app",
-                "https://*.vercel.app"   // ✅ covers preview URLs also
-        ));
+        // 🔥 TEMP FIX (allow all origins to remove 403)
+        config.setAllowedOriginPatterns(List.of("*"));
 
-        // Allowed HTTP methods
-        config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
-        ));
+        // Allow all methods
+        config.setAllowedMethods(List.of("*"));
 
         // Allow all headers
         config.setAllowedHeaders(List.of("*"));
 
-        // Expose Authorization header (useful later for JWT)
+        // Expose headers if needed
         config.setExposedHeaders(List.of("Authorization"));
 
-        // ❗ IMPORTANT: false because no cookies/session
+        // ❗ Must be false when using "*"
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -73,7 +62,6 @@ public class SecurityConfig {
         return source;
     }
 
-    // 🔐 Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
