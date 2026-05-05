@@ -25,7 +25,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Allow preflight requests (VERY IMPORTANT for browser)
+                        // ✅ Allow preflight requests (IMPORTANT for browser)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // ✅ Public APIs
@@ -34,7 +34,7 @@ public class SecurityConfig {
                         // ✅ Swagger access
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // ✅ TEMP: allow all APIs (later we secure with JWT)
+                        // ✅ Allow all APIs (for now)
                         .anyRequest().permitAll()
                 );
 
@@ -45,11 +45,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 🔥 Allow your frontend (local + Vercel)
-        config.setAllowedOrigins(List.of(
+        // 🔥 FIXED: Allow your frontend (LOCAL + VERCEL)
+        config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-                "https://trafficai24-git-main-rudra56-pngs-projects.vercel.app"
+                "https://traffic-ai-frontend56.vercel.app",
+                "https://*.vercel.app"   // ✅ covers preview URLs also
         ));
 
         // Allowed HTTP methods
@@ -63,7 +64,7 @@ public class SecurityConfig {
         // Expose Authorization header (useful later for JWT)
         config.setExposedHeaders(List.of("Authorization"));
 
-        // ❗ IMPORTANT: must be false (we are not using cookies)
+        // ❗ IMPORTANT: false because no cookies/session
         config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -72,7 +73,7 @@ public class SecurityConfig {
         return source;
     }
 
-    // 🔐 Required for password hashing
+    // 🔐 Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
